@@ -113,3 +113,102 @@ Optimize SQL statements and use field indexes reasonably.
 8, programming means to prevent SQL injection: use JDBC PreparedStatement bitwise insertion or query; regular expression filtering (illegal string filtering);
 --------------------- 
 
+
+1. Use index to improve efficiency:  
+Index is a conceptual part of the table, used to improve the efficiency of data retrieval. ORACLE uses a complex self-balancing B-tree structure. Usually, querying data through index is faster than full table scanning. ORACLE finds the best path to execute the query and Update statement, ORACLE optimizer will use the index. Also use the index when joining multiple tables can also improve efficiency. Another advantage of using the index is that it provides the primary key (primary key ) uniqueness verification. For those LONG or LONG RAW data types, you can index almost all columns. Usually, using indexes in large tables is especially effective. Of course, you will also find that using indexes can also improve efficiency when scanning small tables. Can improve the efficiency of the query, but we must also pay attention to its cost. The index needs space to store, also needs regular maintenance, whenever the record is added or subtracted in the table or the index column is modified, the index itself will be modified. This means that each record's INSERT, DELETE, and UPDATE will pay 4 or 5 more disk I/Os. Because the index requires extra storage and processing, those unnecessary indexes will change the query response time. slow. Regular refactoring of the index is necessary.: ALTER INDEX <INDEXNAME> REBUILD <TABLESPACENAME>
+
+2-5 is a case where the entire table is scanned without applying an index:
+
+2.IS NULL and IS NOT NULL
+
+You can't use null as an index. Any column that contains a null value will not be included in the index. Even if the index has multiple columns, as long as one of the columns contains null, the column is excluded from the index. This means that if a column has a null value, even indexing the column will not improve performance. Any statement optimizer that uses is null or is not null in the where clause is not allowed to use the index.
+
+3. Joined columns
+
+For columns with joins, the optimizer does not use indexes even if the last join value is a static value. Select * from employss where first_name||''||last_name = 'Beill Cliton'; the system optimizer does not use the index created based on last_name.
+
+When using the following SQL statement, the Oracle system can use the index created based on last_name. *** where first_name='Beill'and last_name = 'Cliton';
+
+4. Avoid using calculations on indexed columns. 
+If the index column is part of a function. The optimizer will use full table scan without indexing:  
+inefficient: SELECT ... FROM DEPT WHERE SAL * 12 > 25000;  
+efficient: SELECT ... FROM DEPT WHERE SAL > 25000/12;
+
+5.NOT
+
+... where not (status = 'VALID')
+
+Select * from employee where salary<3000 or salary>3000;
+
+Although the results of the two queries are the same, the second query scheme will be faster than the first query scheme. The second query allows Oracle to use indexes on the salary column, while the first query cannot use indexes.
+
+6. Select the most efficient table name order (only valid in the rule-based optimizer):  
+ORACLE parser processes the table name in the FROM clause in right-to-left order, the last in the FROM clause. The table (the starting table of the starting table) will be processed first. In the case where multiple tables are included in the FROM clause, you must select the table with the fewest number of records as the base table. If there are more than 3 table join queries, then you need to select the intersection table as the base table, the cross table refers to the table referenced by other tables.
+
+7. The join order in the 
+WHERE clause :  ORACLE parses the WHERE clause in a bottom-up order. According to this principle, the connections between the tables must be written before other WHERE conditions. The conditions that can filter the maximum number of records must be Written at the end of the WHERE clause.
+
+8. Avoid using ' * ' in the SELECT clause:  
+ORACLE will convert '*' into all column names in turn during parsing. This work is done by querying the data dictionary, which means it will cost more. time
+
+9. Reduce the number of accesses to the database :  
+ORACLE performs a lot of work internally: parsing SQL statements, estimating index utilization, binding variables, reading data blocks, etc. If you have a few simple database queries, you can put them Consolidate into one query (even if there is no relationship between them)
+
+10. Replace DELETE with TRUNCATE:  
+When deleting records in a table, in the normal case, rollback segments are used to store information that can be recovered. If you do not have a COMMIT transaction, ORACLE will restore the data to the deletion. The state (accurately restored to the state before the delete command was executed). When TRUNCATE is used, the rollback segment no longer stores any information that can be recovered. When the command is run, the data cannot be recovered. Therefore, there are few resources. When called, the execution time will be short.
+
+11. Use COMMIT 
+as much as possible : Whenever possible, use COMMIT as much  as possible in the program, so that the performance of the program is improved, and the demand is reduced  
+by the resources released by COMMIT: Resources released by COMMIT:  
+a. Rollback segment Information used to recover data.  
+b. Locks obtained by program statements  
+c. Space in redo log buffer  
+d. ORACLE manages the internal costs of the above 3 resources
+
+12. Replace the HAVING clause with the Where clause:  
+Avoid using the HAVING clause. HAVING will only filter the result set after all records have been retrieved. This process requires sorting, totaling, etc. If the record can be restricted by the WHERE clause The number, then it can reduce the overhead of this. (non-oracle) on, where, having these three can be added to the conditional clause, on is the first implementation, where is second, having the last, because on is First, the records that do not meet the conditions are filtered before they are counted. It can reduce the data to be processed by the intermediate operation. It is reasonable to say that the speed is the fastest, and where should be faster than having, because it only filters the data. On the two tables when the use of on, so in a table, there is where compared with having. In the case of this single-table query statistics, if the conditions to be filtered do not involve calculating the fields, then the results are the same, except where can use the rushmore technique, while having can't, the latter is slower in speed. To refer to the calculated field, it means that the value of this field is undefined before it is calculated. According to the workflow written in the previous section, the time of where is done before the calculation, and having is after the calculation. It works, so in this case, the results of the two will be different. On multi-table join queries, on works earlier than where. The system firstly combines multiple tables into one temporary table according to the connection conditions between the tables, and then filters them by where, and then calculates them, and then filters them by having. It can be seen that in order for the filter condition to play a correct role, it is first necessary to understand when this condition should work, and then decide to put it there.
+
+13. Improve SQL efficiency through internal functions.:  
+Complex SQL often sacrifices execution efficiency. It is very meaningful to be able to master the above methods of solving problems by using functions.
+
+14. Use table aliases (Alias):  
+When SQL statements join multiple tables, use the table alias and prefix the alias to each column. This way, you can reduce the parsing time and reduce those by Column ambiguity. The syntax error caused.
+
+15. Replace IN with EXISTS and NOT IN with NOT EXISTS:  
+In many basic table-based queries, in order to satisfy a condition, it is often necessary to join another table. In this case, use EXISTS (or NOT EXISTS) It will usually improve the efficiency of the query. In the subquery, the NOT IN clause will perform an internal sort and merge. In either case, NOT IN is the least efficient (because it executes on the table in the subquery) A full table traversal.) To avoid using NOT IN, we can rewrite it as Outer Joins or NOT EXISTS.  
+(Efficient) SELECT * FROM EMP (Base Table) WHERE EMPNO > 0 AND EXISTS (SELECT 'X' FROM DEPT WHERE DEPT.DEPTNO = EMP.DEPTNO AND LOC = MELB')  
+(inefficient) SELECT * FROM EMP (base table) WHERE EMPNO > 0 AND DEPTNO IN (SELECT DEPTNO FROM DEPT WHERE LOC = MELB')
+
+16. Replace DISTINCT with EXISTS:  
+Avoid using DISTINCT in the SELECT clause when submitting a query that contains one-to-many table information (such as department and employee tables). Generally consider replacing with EXIST. EXISTS makes the query faster. Because the RDBMS core module will return the result as soon as the condition of the subquery is met:  
+(inefficient):  
+SELECT DISTINCT DEPT_NO, DEPT_NAME FROM DEPT D, EMP E  
+WHERE D.DEPT_NO = E.DEPT_NO  
+(Efficient):  
+SELECT DEPT_NO, DEPT_NAME FROM DEPT D WHERE EXISTS ( SELECT 'X'  
+FROM EMP E WHERE E.DEPT_NO = D.DEPT_NO);
+
+17. Always use the first column of the 
+index :  If the index is built on multiple columns, the optimizer will choose to use the index only if its first column is referenced by the where clause. This is also a simple and important rule. When only the second column of the index is referenced, the optimizer uses a full table scan and ignores the index.
+
+18. Replace ORDER BY with WHERE: The  
+ORDER BY clause uses the index only under two strict conditions: all columns in the ORDER BY must be contained in the same index and kept in the index in the order &&ORDER BY all columns Must be defined as non-empty.  
+The index used by the WHERE clause and the index used in the ORDER BY clause cannot be juxtaposed. The  
+table DEPT contains the following columns:  
+DEPT_CODE PK NOT NULL  
+DEPT_DESC NOT NULL  
+DEPT_TYPE NULL  
+inefficient: (index not used)  
+SELECT DEPT_CODE FROM DEPT ORDER BY DEPT_TYPE  
+Efficient: (using an index)  
+SELECT DEPT_CODE FROM DEPT WHERE DEPT_TYPE > 0
+
+19. Avoid resource-intensive operations:  
+SQL statements with DISTINCT, UNION, MINUS, INTERSECT, ORDER BY will start the SQL engine to perform resource-sorted sorting (SORT) functions. DISTINCT requires a sort operation, while others need at least one execution. Two sorts. Usually, SQL statements with UNION, MINUS, INTERSECT can be rewritten in other ways. If your database's SORT_AREA_SIZE is well-tuned, use UNION, MINUS, INTERSECT can also be considered, after all, they are readable Very strong
+
+Optimize GROUP BY: 
+Improve the efficiency of GROUP BY statements by filtering out unwanted records before GROUP BY. 
+Inefficient:  
+SELECT JOB , AVG(SAL) FROM EMP GROUP by JOB HAVING JOB = 'PRESIDENT' 
+Efficient:  
+SELECT JOB , AVG(SAL) FROM EMP WHERE JOB = 'PRESIDENT' GROUP by JOB
