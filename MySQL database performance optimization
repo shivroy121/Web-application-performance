@@ -1,1 +1,99 @@
+First, MySQL achieve optimization 
 
+1) Database design should be reasonable (follow 3F) 
+
+2). Add index () 
+Index is divided into: ordinary index, primary key index, unique index, full-text index 
+
+3) sub-table library technology (module sub-table , horizontal split, vertical split) 
+
+4). separate read and write 
+
+5) storage procedure 
+
+6). Set the maximum number of connections 
+
+7). upgrade server 
+
+8). clean up any fragmentation 
+
+9) .SQL statement tuning 
+
+Second, the database design 
+1) reducing the amount of redundancy 
+
+2) follows the formula 3F. three, three paradigms 
+1F: atoms bound each column can not be divided 
+2F: guarantee uniqueness 
+3F: redundant data not 
+
+four, sub-sub-table repository 
+. 1) vertical segmentation an item Split into multiple small projects, each with a separate database, the benefits are not affected. 
+  2) the level of segmentation modulo algorithm, evenly distributed five positioning slow query 
+
+1) What is the slow queries? 
+MySQL default slow query is 10 seconds, if it does not respond after 10 seconds, this phenomenon is called slow query 
+2) slow query number command show status like 'slow_queries'; 
+
+six, the index
+
+Indexes are used to quickly find records with specific values, and all MySQL indexes are saved as B-trees. If there is no index, MySQL must scan all records of the entire table from the first record until the record is found to meet the requirements. The more records in the table, the higher the cost of this operation. If an index has been created on the column as a search condition, MySQL can quickly get the location of the target record without scanning any records. If the table has 1000 records, the index lookup record is at least 100 times faster than the sequential scan record.
+
+Seven, index classification 
+1) primary key index 
+
+primary key is a unique index, but it must be designated as the "PRIMARY KEY". If you have used columns of type AUTO_INCREMENT, you may already be familiar with concepts like primary keys. The primary key is usually specified when the table is created, such as "CREATE TABLE tablename ([...], PRIMARY KEY);". However, we can also add a primary key by modifying the table, such as "ALTER TABLE tablename ADD PRIMARY KEY;". There can only be one primary key per table. 
+
+2) the only index of all values of the indexed column can only occur once, that must be unique. 
+
+3) composite index 
+
+4) full-text index stop words, because in a text, create the index is an infinite number, therefore, for some common words and characters, it does not create these words, known as stop words 
+
+5) general index The only task of a normal index (an index defined by the keyword KEY or INDEX) is to speed up access to the data. Therefore, you should only create indexes for data columns that most often appear in query conditions (WHEREcolumn=) or sort conditions (ORDERBYcolumn). Whenever possible, you should choose the most neat and compact data column (such as an integer-type data column) to create an index. 
+
+Eight, the realization of the principle index index is a binary search, will first take a middle number, then left small right large, if the query data than it is to find the right big, efficiency is the N-th power of 2, the index disadvantage is increased , delete, the index file is also updated September, the storage engine inndb 
+underlying implementation by the B-tree, first create an index file, the index file has an index value for each location 
+September, the index will be submitted to efficiency
+
+
+
+Myisam 
+memory 
+ten, inndb and myisam difference 
+1) high efficiency myisam when adding 
+2) inndb transaction mechanism security 
+3) myisam is table lock 
+4) inndb is row lock 
+5) myisam supports full-text search 
+6) inndb does not support full-text search 
+7) supports B-tree data structure 
+8) support the index cache 
+eleven, SQL optimization techniques 
+① use group by grouping query, after the default group, but also sort, may slow down, 
+increase the order by null in the group behind can be prevented by Sort. 
+explain select * from emp group by deptno order by null; select * from dept left join emp on dept.deptno=emp.deptno; [left outer join, more ok!]
+2 In some cases, you can use a join instead of a subquery. Because of the join, MySQL does not need to create temporary tables in memory. 
+Select * from dept, emp where dept.deptno=emp.deptno; [simple processing]
+
+③ query optimization, to try to avoid full table scans, should first consider the establishment by the column involved in where and order index 
+should be avoided for null fields to determine the value in the where clause, will cause the engine to give up using the index and Perform a full table scan, such as: 
+select id from t where num is null 
+It is best not to leave NULL for the database, use NOT NULL to fill the database as much as possible. 
+Remarks, descriptions, comments, etc. can be set to NULL, others, best Do not use NULL. 
+Do not think that NULL does not require space, such as: char (100) type, when the field is established, the space is fixed, regardless of whether the value is inserted (NULL is also included), it takes up 100 characters of space, if it is varchar Such a variable length field, null does not take up space. 
+You can set the default value of 0 on the num, num column in the table to ensure that there is no null value, then this query: 
+the SELECT the above mentioned id from t = 0 the WHERE num 
+twelve, MySQL separate read and write 
+in the database cluster architecture, so that the main library is responsible for handling transactional Query, and the slave library is only responsible for processing the select query, so that the division of labor can clearly improve the overall read and write performance of the database. Of course, another function of the main database is responsible for synchronizing the data changes caused by the transactional query into the slave library, that is, the write operation. 
+Thirteen, the benefits of read and write separation 
+1) apportion server pressure, improve the system processing efficiency of the machine
+Read and write separation is suitable for reading far more than writing scenarios. If there is a server, when there are many selects, update and delete will be blocked by the data in these select accesses, waiting for select to end, the concurrent performance is not high, and the master and slave are only responsible. respective write and read, a great degree of ease X locks and lock contention S 
+2) increase redundancy, improve service availability, when a database server downtime can adjust the other one with the fastest speed recovery services from the library 
+ten Fourth, the master-slave replication principle 
+depends on the binary log, binary-log. binary log records database changes caused by the statement of 
+fifteen, Scale-up and Scale-out difference 
+Scale Out refers Application can be extended in the horizontal direction. Generally speaking, for data center applications, Scale out means that when adding more machines, applications can still make good use of the resources of these machines to improve their efficiency and achieve good scalability. 
+Scale Up means that Application can be extended in the vertical direction. Generally, for a single machine, Scale Up is worthwhile. When a computing node (machine) adds more CPU Cores, storage devices, and uses more memory, the application can make full use of these resources to improve its efficiency. so as to achieve good scalability 
+sixteen, myCat 
+is an open source distributed database system, because the database engine generally has its own database, but mycat unique database engine does not own, said all the strict sense and can not be considered A complete database system, a middleware that acts as a bridge between applications and databases.
