@@ -97,3 +97,19 @@ Scale Out refers Application can be extended in the horizontal direction. Genera
 Scale Up means that Application can be extended in the vertical direction. Generally, for a single machine, Scale Up is worthwhile. When a computing node (machine) adds more CPU Cores, storage devices, and uses more memory, the application can make full use of these resources to improve its efficiency. so as to achieve good scalability 
 sixteen, myCat 
 is an open source distributed database system, because the database engine generally has its own database, but mycat unique database engine does not own, said all the strict sense and can not be considered A complete database system, a middleware that acts as a bridge between applications and databases.
+
+
+
+1 Decompose a table 
+with more fields into multiple tables For tables with more fields, if some fields are used at a low frequency, you can separate these fields to form a new table. Because when the amount of data in a table is large, the query speed is slowed down due to the presence of fields that are used less frequently. 
+2 Add intermediate tables 
+For tables that often need joint queries, you can create intermediate tables to improve query efficiency. By creating an intermediate table, the data that needs to be frequently federated is inserted into the intermediate table, and then the original joint query is changed to the query of the intermediate table, thereby improving the query efficiency. 
+3. Enhance performance from the database level 
+Optimize SQL statements and use field indexes reasonably. 
+4. Enhance performance from the code level: use cache and NoSQL database storage, such as MongoDB/Memcached/Redis to alleviate the pressure of high concurrent database queries. 
+5, reduce the number of database operations, try to use the database access driver batch method. 
+6. Infrequently used data migration backups, avoiding searching every time in massive data. 
+7, improve the database server hardware configuration, or build a database cluster. 
+8, programming means to prevent SQL injection: use JDBC PreparedStatement bitwise insertion or query; regular expression filtering (illegal string filtering);
+--------------------- 
+
